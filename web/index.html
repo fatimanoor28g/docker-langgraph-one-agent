@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docker + LangGraph Classroom Demo</title>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;background:#f4f7fb;color:#17263d;margin:0}
+    main{max-width:760px;margin:48px auto;padding:24px;background:white;border-radius:16px;box-shadow:0 10px 40px #182a4918}
+    h1{margin:0 0 8px}p{color:#59677d}#chat{min-height:190px;max-height:410px;overflow:auto;border:1px solid #dce3ee;border-radius:12px;padding:14px;margin:18px 0;background:#fbfcff}
+    .line{margin:9px 0;white-space:pre-wrap}.you{color:#154fa0}.ai{color:#147768}
+    input,button{font:inherit;padding:11px;border-radius:9px;border:1px solid #cbd5e1}
+    #message{flex:1}button{background:#1b56ba;color:white;cursor:pointer;border:0}
+    .bar{display:flex;gap:8px}.small{font-size:13px;color:#59677d}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>University AI Helpdesk</h1>
+    <p>One LangGraph agent, two Python tools, running in Docker.</p>
+    <div class="small">Chat ID: <input id="session" value="student-1" aria-label="Chat ID" style="width:150px" />
+      <button onclick="newChat()">New chat</button></div>
+    <div id="chat"></div>
+    <div class="bar"><input id="message" placeholder="Ask about attendance or create a complaint" />
+      <button id="send" onclick="sendChat()">Send</button></div>
+    <p class="small">Examples: What is attendance policy? / Create a complaint: Wi-Fi is broken.</p>
+    <p class="small">API documentation: <a href="/docs">/docs</a> | Saved tickets: <a href="/tickets">/tickets</a></p>
+  </main>
+  <script>
+    const chat = document.querySelector('#chat');
+    const box = document.querySelector('#message');
+    function add(role,text){const line=document.createElement('div');line.className='line '+role;
+      line.textContent=(role==='you'?'You: ':'AI: ')+text;chat.appendChild(line);chat.scrollTop=chat.scrollHeight;}
+    function newChat(){document.querySelector('#session').value='student-'+Math.floor(Math.random()*100000);
+      chat.replaceChildren();}
+    async function sendChat(){const message=box.value.trim();if(!message)return;
+      const button=document.querySelector('#send');button.disabled=true;add('you',message);box.value='';
+      try{const response=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({session_id:document.querySelector('#session').value,message})});
+        const result=await response.json();if(!response.ok)throw new Error(JSON.stringify(result));
+        add('ai',typeof result.answer==='string'?result.answer:JSON.stringify(result.answer));
+      }catch(error){add('ai','Request failed: '+error.message);}finally{button.disabled=false;}}
+    box.addEventListener('keydown',event=>{if(event.key==='Enter')sendChat();});
+  </script>
+</body>
+</html>

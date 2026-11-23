@@ -1,0 +1,15 @@
+services:
+  university-agent:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      DB_PATH: /app/data/tickets.db
+    volumes:
+      - tickets_data:/app/data
+    init: true
+
+volumes:
+  tickets_data:
